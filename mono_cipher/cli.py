@@ -17,19 +17,22 @@ def main_loop():
         menu = (
             "1) Mã hóa (Encrypt)\n"
             "2) Giải mã (Decrypt)\n"
-            "3) Help\n"
-            "4) Exit\n"
+            "3) Brute-force decrypt (gợi ý khóa)\n"
+            "4) Help\n"
+            "5) Exit\n"
         )
         ui.boxed("MAIN MENU", menu)
-        choice = ui.prompt("Chọn (1-4): ").strip()
+        choice = ui.prompt("Chọn (1-5): ").strip()
 
         if choice == "1":
             workflows.encrypt_flow()
         elif choice == "2":
             workflows.decrypt_flow()
         elif choice == "3":
-            workflows.show_help()
+            workflows.brute_flow()
         elif choice == "4":
+            workflows.show_help()
+        elif choice == "5":
             print(ui.FG["magenta"] + "Tạm biệt — mã hóa an toàn nhé!" + ui.RESET)
             time.sleep(0.6)
             break

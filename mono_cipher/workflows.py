@@ -6,6 +6,7 @@ import sys
 from typing import Optional
 from . import ui
 from . import cipher
+from . import analysis
 
 
 def _strip_saved_header(text: str) -> str:
@@ -83,6 +84,28 @@ def decrypt_flow():
     post_output_actions(plaintext, key=key, label="Plaintext")
 
 
+def brute_flow():
+    """Workflow for brute-forcing a Mono Alphabetic ciphertext."""
+    ui.clear()
+    ui.banner()
+    ui.boxed("BRUTE-FORCE", "Phân tích tần suất chữ cái để ước lượng ánh xạ và giải mã.")
+    ciphertext = _read_text_input("Ciphertext to brute-force")
+    spinner = ui.Spinner("Brute-forcing")
+    spinner.start()
+    result = analysis.bruteforce(ciphertext)
+    spinner.stop()
+
+
+    if not result:
+        print(ui.FG["red"] + "Không tìm được kết quả." + ui.RESET)
+        ui.prompt("Nhấn Enter để về menu...")
+        return
+    
+    guessed_key, plaintext_guess = result
+    ui.boxed("KẾT QUẢ", f"Guessed Key: {guessed_key}\n\nPlaintext Guess:\n{plaintext_guess}")
+    post_output_actions(plaintext_guess, key=guessed_key, label="Plaintext Guess")
+
+
 def post_output_actions(text: str, key: Optional[str] = None, label: str = ""):
     """
     Handles actions after a result is generated (copy, save, etc.).
@@ -119,27 +142,6 @@ def post_output_actions(text: str, key: Optional[str] = None, label: str = ""):
     else:
         return
     ui.prompt("Nhấn Enter để tiếp tục...")
-
-
-def save_or_copy_flow(text: str):
-    """A mini-flow for saving or copying a large block of text."""
-    print(ui.FG["cyan"] + "Bạn muốn (1) copy, (2) lưu file, (3) in ra console, (q) hủy?" + ui.RESET)
-    cmd = ui.prompt("> ").strip().lower()
-    if cmd == "1":
-        if ui.pyperclip:
-            ui.pyperclip.copy(text)
-            print(ui.FG["green"] + "Đã copy toàn bộ kết quả." + ui.RESET)
-        else:
-            print(ui.FG["yellow"] + "pyperclip không có." + ui.RESET)
-    elif cmd == "2":
-        fname = ui.prompt("Tên file: ").strip() or "results.txt"
-        with open(fname, "w", encoding="utf-8") as f:
-            f.write(text)
-        print(ui.FG["green"] + f"Đã lưu vào {fname}" + ui.RESET)
-    elif cmd == "3":
-        print("\n" + text + "\n")
-    else:
-        print("Hủy.")
 
 
 def show_help():
