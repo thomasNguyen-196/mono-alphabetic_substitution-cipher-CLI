@@ -88,21 +88,31 @@ def brute_flow():
     """Workflow for brute-forcing a Mono Alphabetic ciphertext."""
     ui.clear()
     ui.banner()
-    ui.boxed("BRUTE-FORCE", "Phân tích tần suất chữ cái để ước lượng ánh xạ và giải mã.")
+    ui.boxed("BRUTE-FORCE", "Phân tích tần suất + hill-climb để ước lượng ánh xạ và giải mã.")
     ciphertext = _read_text_input("Ciphertext to brute-force")
     spinner = ui.Spinner("Brute-forcing")
     spinner.start()
-    result = analysis.bruteforce(ciphertext)
+    results = analysis.bruteforce(ciphertext)
     spinner.stop()
 
 
-    if not result:
+    if not results:
         print(ui.FG["red"] + "Không tìm được kết quả." + ui.RESET)
         ui.prompt("Nhấn Enter để về menu...")
         return
     
-    guessed_key, plaintext_guess = result
-    ui.boxed("KẾT QUẢ", f"Guessed Key: {guessed_key}\n\nPlaintext Guess:\n{plaintext_guess}")
+    lines = []
+    for idx, (score, key, plaintext_guess) in enumerate(results, start=1):
+        preview = plaintext_guess.replace("\n", " ")[:90]
+        lines.append(f"[{idx}] Score: {score} | Key: {key} | {preview}")
+    summary = "\n".join(lines)
+
+    best_score, guessed_key, plaintext_guess = results[0]
+    body = (
+        f"Top ứng viên (score giảm dần):\n{summary}\n\n"
+        f"Best guess (score {best_score}):\nKey: {guessed_key}\n\n{plaintext_guess}"
+    )
+    ui.boxed("KẾT QUẢ", body)
     post_output_actions(plaintext_guess, key=guessed_key, label="Plaintext Guess")
 
 

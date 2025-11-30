@@ -11,6 +11,7 @@ Công cụ dòng lệnh (CLI) để mã hóa và giải mã văn bản bằng th
 - Nhập văn bản trực tiếp, từ stdin (pipe) hoặc từ file.
 - Tùy chọn copy kết quả ra clipboard hoặc lưu ra file.
 - Giao diện CLI thân thiện, có thể dùng pyfiglet/colorama/pyperclip để đẹp hơn.
+- Brute-force mono: seed theo phân tích tần suất tiếng Anh, sau đó hill-climb tối ưu `english_score`, trả về top ứng viên (key + plaintext). (Tuy nhiên mã nguồn này chưa đảm bảo dịch ngược đúng 100% plaintext)
 
 ## Yêu cầu
 

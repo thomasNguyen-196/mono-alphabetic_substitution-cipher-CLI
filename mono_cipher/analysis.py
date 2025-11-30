@@ -1,5 +1,6 @@
-"""Heuristics for monoalphabetic substitution ciphertexts (frequency mapping)."""
+"""Heuristics for monoalphabetic substitution ciphertexts (frequency + hill-climb search)."""
 
+import random
 from collections import Counter
 from typing import Dict, List, Tuple
 
@@ -14,6 +15,11 @@ ENGLISH_FREQ = [
     ("G", 0.02015), ("Y", 0.01974), ("P", 0.01929), ("B", 0.01492),
     ("V", 0.00978), ("K", 0.00772), ("J", 0.00153), ("X", 0.00150),
     ("Q", 0.00095), ("Z", 0.00074),
+]
+
+COMMON_WORDS = [
+    " the ", " and ", " to ", " of ", " that ", " is ", " in ", " it ",
+    " for ", " you ", " with ", " on ", " have ", " be ", " as ", " at "
 ]
 
 
@@ -80,16 +86,97 @@ def apply_mapping(ciphertext: str, mapping: Dict[str, str]) -> str:
     return "".join(result)
 
 
-def bruteforce(ciphertext: str) -> Tuple[str, str]:
+def english_score(text: str) -> int:
     """
-    Performs frequency-based brute-force guess.
+    Heuristic score for English-likeness: common words weight + common letters.
+    """
+    lower = " " + text.lower() + " "
+    score = 0
+    for word in COMMON_WORDS:
+        score += lower.count(word) * 10
+    freq = {char: lower.count(char) for char in "etaoinshrdlu"}
+    score += sum(freq.values())
+    return score
+
+
+def _swap_mapping(mapping: Dict[str, str], a: str, b: str) -> Dict[str, str]:
+    """Returns a copy with plaintext assignments for cipher letters a/b swapped."""
+    new_map = mapping.copy()
+    pa, pb = new_map.get(a), new_map.get(b)
+    if pa is None or pb is None:
+        return new_map
+    new_map[a], new_map[b] = pb, pa
+    return new_map
+
+
+def _hill_climb(ciphertext: str, initial_map: Dict[str, str], max_iter: int = 2000, stagnation: int = 400) -> Tuple[int, Dict[str, str], str]:
+    """
+    Simple hill-climb: random swaps that improve english_score are accepted.
+    Returns (score, mapping, plaintext).
+    """
+    best_map = initial_map
+    best_plain = apply_mapping(ciphertext, best_map)
+    best_score = english_score(best_plain)
+
+    current_map = best_map
+    current_score = best_score
+    steps_since_improve = 0
+
+    for _ in range(max_iter):
+        c1, c2 = random.sample(cipher.ALPHABET, 2)
+        cand_map = _swap_mapping(current_map, c1, c2)
+        cand_plain = apply_mapping(ciphertext, cand_map)
+        cand_score = english_score(cand_plain)
+        if cand_score > current_score:
+            current_map = cand_map
+            current_score = cand_score
+            steps_since_improve = 0
+            if cand_score > best_score:
+                best_map = cand_map
+                best_plain = cand_plain
+                best_score = cand_score
+        else:
+            steps_since_improve += 1
+            if steps_since_improve >= stagnation:
+                break
+    return best_score, best_map, best_plain
+
+
+def _seed_mappings(ciphertext: str) -> List[Dict[str, str]]:
+    """Builds a handful of seed mappings by swapping among top-frequency cipher letters."""
+    base = guess_mapping_by_frequency(ciphertext)
+    seeds = [base]
+    top_cipher = [ch for ch, _ in letter_frequency(ciphertext)][:6]
+    swap_pairs = [(a, b) for idx, a in enumerate(top_cipher) for b in top_cipher[idx + 1:]]
+    random.shuffle(swap_pairs)
+    for a, b in swap_pairs[:6]:  # limit seed explosion
+        seeds.append(_swap_mapping(base, a, b))
+    return seeds
+
+
+def bruteforce(ciphertext: str, restarts_per_seed: int = 3, top: int = 5) -> List[Tuple[int, str, str]]:
+    """
+    Frequency seeding + hill-climb refinement.
 
     Returns:
-        (key, plaintext_guess)
-        - key: 26-letter substitution alphabet (plain->cipher) derived from mapping.
-        - plaintext_guess: decrypted text using the guessed mapping.
+        List of (score, key, plaintext) sorted by score desc.
     """
-    mapping = guess_mapping_by_frequency(ciphertext)
-    key = mapping_to_key(mapping)
-    plaintext = apply_mapping(ciphertext, mapping)
-    return key, plaintext
+    if not ciphertext:
+        return []
+
+    results: List[Tuple[int, str, str]] = []
+    for seed in _seed_mappings(ciphertext):
+        for _ in range(restarts_per_seed):
+            score, mapping, plaintext = _hill_climb(ciphertext, seed)
+            key = mapping_to_key(mapping)
+            results.append((score, key, plaintext))
+
+    # Deduplicate by key while keeping highest score per key
+    best_by_key: Dict[str, Tuple[int, str]] = {}
+    for score, key, plaintext in results:
+        if key not in best_by_key or score > best_by_key[key][0]:
+            best_by_key[key] = (score, plaintext)
+
+    collapsed = [(score, key, plain) for key, (score, plain) in best_by_key.items()]
+    collapsed.sort(reverse=True, key=lambda x: x[0])
+    return collapsed[:top]
