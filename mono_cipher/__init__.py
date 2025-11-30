@@ -1,1 +1,1 @@
-# This file makes the 'vigenere_cipher' directory a Python package.
+# This file makes the 'mono_cipher' directory a Python package.

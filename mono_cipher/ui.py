@@ -60,7 +60,7 @@ def center(text: str, width: int = None) -> str:
 def banner():
     """Prints the main application banner."""
     title = "MONO SUBSTITUTION CIPHER"
-    subtitle = "CLI Edition"
+    subtitle = "CLI — Refactored Edition"
     width = get_terminal_width()
     if pyfiglet:
         fig = pyfiglet.figlet_format("MONO CIPHER", font="slant")
@@ -94,17 +94,16 @@ def boxed(title: str, body: str):
         body: The main content, which can contain newlines.
     """
     width = min(80, get_terminal_width() - 4)
-    horizontal = "+" + "-" * width + "+"
-    print(FG["blue"] + horizontal + RESET)
+    print(FG["blue"] + "┌" + "─" * width + "┐" + RESET)
     title_line = f" {title} "
-    print(FG["blue"] + "|" + RESET + BOLD + center(title_line, width) + RESET + FG["blue"] + "|" + RESET)
-    print(FG["blue"] + horizontal + RESET)
+    print(FG["blue"] + "│" + RESET + BOLD + center(title_line, width) + RESET + FG["blue"] + "│" + RESET)
+    print(FG["blue"] + "├" + "─" * width + "┤" + RESET)
     for line in body.splitlines():
         # Naive line wrapping
         while line:
-            print(FG["blue"] + "|" + RESET + line[:width].ljust(width) + FG["blue"] + "|" + RESET)
+            print(FG["blue"] + "│" + RESET + line[:width].ljust(width) + FG["blue"] + "│" + RESET)
             line = line[width:]
-    print(FG["blue"] + horizontal + RESET)
+    print(FG["blue"] + "└" + "─" * width + "┘" + RESET)
 
 
 class Spinner:

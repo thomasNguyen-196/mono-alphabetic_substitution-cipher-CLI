@@ -29,17 +29,17 @@ def _read_text_input(label: str) -> str:
         data = sys.stdin.read()
         return _strip_saved_header(data.rstrip("\n"))
 
-    print(ui.FG["yellow"] + "For large text, you can read from file by pressing 'f'." + ui.RESET)
-    mode = ui.prompt("Enter directly [Enter] or type 'f' to load from file: ").strip().lower()
+    print(ui.FG["yellow"] + "Văn bản dài (trên ~1k ký tự) nên nhập qua file để tránh bị cắt." + ui.RESET)
+    mode = ui.prompt("Chọn nhập trực tiếp [Enter] hoặc gõ 'f' để đọc từ file: ").strip().lower()
     if mode == "f":
         while True:
-            path = ui.prompt("Path to file: ").strip()
+            path = ui.prompt("Đường dẫn file: ").strip()
             try:
                 with open(path, "r", encoding="utf-8") as f:
                     return _strip_saved_header(f.read())
             except Exception as e:
-                print(ui.FG["red"] + f"Could not read file: {e}" + ui.RESET)
-                retry = ui.prompt("Try again? (y/n): ").strip().lower()
+                print(ui.FG["red"] + f"Lỗi đọc file: {e}" + ui.RESET)
+                retry = ui.prompt("Thử lại? (y/n): ").strip().lower()
                 if retry != "y":
                     return ""
     return ui.prompt(f"{label}: ")
@@ -51,23 +51,23 @@ def _read_key() -> str:
     Non-letters are ignored; validation ensures length 26 with no duplicates.
     """
     while True:
-        key = ui.prompt("Substitution key (26 letters, e.g., QWERTY...): ").strip()
+        key = ui.prompt("Khóa hoán vị (26 chữ, e.g., QWERTY...): ").strip()
         try:
             cipher.validate_key(key)
             return key
         except ValueError as e:
-            print(ui.FG["red"] + f"Invalid key: {e}" + ui.RESET)
+            print(ui.FG["red"] + f"Khóa không hợp lệ: {e}" + ui.RESET)
 
 
 def encrypt_flow():
     """Workflow for encrypting a message."""
     ui.clear()
     ui.banner()
-    ui.boxed("ENCRYPT", "Enter plaintext and a 26-letter substitution key.")
+    ui.boxed("ENCRYPT", "Nhập văn bản cần mã hóa và khóa hoán vị chứa 26 ký tự.")
     plaintext = _read_text_input("Plaintext")
     key = _read_key()
     ciphertext = cipher.encrypt(plaintext, key)
-    ui.boxed("RESULT", ciphertext)
+    ui.boxed("KẾT QUẢ", ciphertext)
     post_output_actions(ciphertext, key=key, label="Ciphertext")
 
 
@@ -75,11 +75,11 @@ def decrypt_flow():
     """Workflow for decrypting a message."""
     ui.clear()
     ui.banner()
-    ui.boxed("DECRYPT", "Enter ciphertext and the same 26-letter key.")
+    ui.boxed("DECRYPT", "Nhập ciphertext và khóa hoán vị chứa 26 ký tự.")
     ciphertext = _read_text_input("Ciphertext")
     key = _read_key()
     plaintext = cipher.decrypt(ciphertext, key)
-    ui.boxed("RESULT", plaintext)
+    ui.boxed("KẾT QUẢ", plaintext)
     post_output_actions(plaintext, key=key, label="Plaintext")
 
 
@@ -89,57 +89,57 @@ def post_output_actions(text: str, key: Optional[str] = None, label: str = ""):
     When saving to file, the key (if provided) is written alongside the output.
     """
     print()
-    print(ui.FG["cyan"] + "[1] Copy to clipboard   [2] Save to file   [Enter] Back" + ui.RESET)
-    cmd = ui.prompt("Select: ").strip()
+    print(ui.FG["cyan"] + "[1] Copy vào clipboard (nếu có pyperclip)   [2] Lưu vào file   [Enter] Quay lại" + ui.RESET)
+    cmd = ui.prompt("Chọn: ").strip()
     if cmd == "1":
         if ui.pyperclip:
             try:
                 ui.pyperclip.copy(text)
-                print(ui.FG["green"] + "Copied to clipboard." + ui.RESET)
+                print(ui.FG["green"] + "Đã copy vào clipboard." + ui.RESET)
             except Exception as e:
-                print(ui.FG["red"] + f"Copy failed: {e}" + ui.RESET)
+                print(ui.FG["red"] + f"Copy thất bại: {e}" + ui.RESET)
         else:
-            print(ui.FG["yellow"] + "pyperclip not installed; cannot copy." + ui.RESET)
+            print(ui.FG["yellow"] + "pyperclip không cài, không thể copy. Bạn có thể pip install pyperclip." + ui.RESET)
     elif cmd == "2":
-        fname = ui.prompt("Save file name (default output.txt): ").strip() or "output.txt"
+        fname = ui.prompt("Tên file lưu (mặc định output.txt): ").strip() or "output.txt"
         content = text
         if key is not None:
             header_parts = []
             if label:
                 header_parts.append(label)
             header_parts.append(f"Key: {key}")
-            header = " | ".join(header_parts)
+            header = " — ".join(header_parts)
             content = f"{header}\n\n{text}"
         try:
             with open(fname, "w", encoding="utf-8") as f:
                 f.write(content)
-            print(ui.FG["green"] + f"Saved to {fname}" + ui.RESET)
+            print(ui.FG["green"] + f"Đã lưu vào {fname}" + ui.RESET)
         except Exception as e:
-            print(ui.FG["red"] + f"Save failed: {e}" + ui.RESET)
+            print(ui.FG["red"] + f"Lưu thất bại: {e}" + ui.RESET)
     else:
         return
-    ui.prompt("Press Enter to continue...")
+    ui.prompt("Nhấn Enter để tiếp tục...")
 
 
 def save_or_copy_flow(text: str):
     """A mini-flow for saving or copying a large block of text."""
-    print(ui.FG["cyan"] + "Choose: (1) copy, (2) save file, (3) print, (q) cancel" + ui.RESET)
+    print(ui.FG["cyan"] + "Bạn muốn (1) copy, (2) lưu file, (3) in ra console, (q) hủy?" + ui.RESET)
     cmd = ui.prompt("> ").strip().lower()
     if cmd == "1":
         if ui.pyperclip:
             ui.pyperclip.copy(text)
-            print(ui.FG["green"] + "Copied all results." + ui.RESET)
+            print(ui.FG["green"] + "Đã copy toàn bộ kết quả." + ui.RESET)
         else:
-            print(ui.FG["yellow"] + "pyperclip not installed." + ui.RESET)
+            print(ui.FG["yellow"] + "pyperclip không có." + ui.RESET)
     elif cmd == "2":
-        fname = ui.prompt("File name: ").strip() or "results.txt"
+        fname = ui.prompt("Tên file: ").strip() or "results.txt"
         with open(fname, "w", encoding="utf-8") as f:
             f.write(text)
-        print(ui.FG["green"] + f"Saved to {fname}" + ui.RESET)
+        print(ui.FG["green"] + f"Đã lưu vào {fname}" + ui.RESET)
     elif cmd == "3":
         print("\n" + text + "\n")
     else:
-        print("Cancelled.")
+        print("Hủy.")
 
 
 def show_help():
@@ -147,11 +147,12 @@ def show_help():
     ui.clear()
     ui.banner()
     help_text = (
-        "Usage:\n"
-        "- Encrypt/decrypt with a 26-letter substitution key (duplicates not allowed).\n"
-        "- Long text can be provided via file (choose 'f') or piped stdin: cat file.txt | mono\n"
-        "- You can copy or save results after each action.\n"
-        "- Optional visuals: pip install pyfiglet colorama pyperclip\n"
+        "Hướng dẫn ngắn:\n"
+        "- Mã hóa/giải mã bằng khóa chữ cái (keyword). Ký tự không phải chữ sẽ giữ nguyên.\n"
+        "- Văn bản dài có thể đọc từ file (chọn 'f') hoặc pipe: cat file.txt | vigenere\n"
+        "- Brute-force: ước lượng độ dài khóa (Kasiski + IC), rồi phân tích tần suất từng cột để gợi ý khóa.\n"
+        "- Sau khi có kết quả, bạn có thể copy hoặc lưu file.\n"
+        "- Nếu muốn giao diện xịn hơn: pip install pyfiglet colorama pyperclip\n"
     )
     ui.boxed("HELP", help_text)
-    ui.prompt("Press Enter to return to menu...")
+    ui.prompt("Nhấn Enter để về menu...")

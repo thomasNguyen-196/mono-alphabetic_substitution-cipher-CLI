@@ -15,13 +15,13 @@ def main_loop():
         ui.clear()
         ui.banner()
         menu = (
-            "1) Encrypt\n"
-            "2) Decrypt\n"
+            "1) Mã hóa (Encrypt)\n"
+            "2) Giải mã (Decrypt)\n"
             "3) Help\n"
             "4) Exit\n"
         )
         ui.boxed("MAIN MENU", menu)
-        choice = ui.prompt("Choose (1-4): ").strip()
+        choice = ui.prompt("Chọn (1-4): ").strip()
 
         if choice == "1":
             workflows.encrypt_flow()
@@ -30,11 +30,11 @@ def main_loop():
         elif choice == "3":
             workflows.show_help()
         elif choice == "4":
-            print(ui.FG["magenta"] + "Goodbye! Stay safe with your ciphers." + ui.RESET)
+            print(ui.FG["magenta"] + "Tạm biệt — mã hóa an toàn nhé!" + ui.RESET)
             time.sleep(0.6)
             break
         else:
-            print(ui.FG["red"] + "Invalid choice. Try again." + ui.RESET)
+            print(ui.FG["red"] + "Lựa chọn không hợp lệ. Thử lại." + ui.RESET)
             time.sleep(0.8)
 
 
@@ -43,7 +43,7 @@ def main():
     try:
         main_loop()
     except KeyboardInterrupt:
-        print("\n" + ui.FG["magenta"] + "Exited." + ui.RESET)
+        print("\n" + ui.FG["magenta"] + "Thoát." + ui.RESET)
         sys.exit(0)
 
 
